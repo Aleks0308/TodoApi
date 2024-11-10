@@ -14,25 +14,25 @@ namespace TodoApi.Controllers
     [ApiController]
     public class TodoItemsController : ControllerBase
     {
-        private readonly TodoListContext _context;
+        private readonly ITodoListRepository todoListRepository;
 
-        public TodoItemsController(TodoListContext context)
+        public TodoItemsController(ITodoListRepository todoListRepository)
         {
-            _context = context;
+            this.todoListRepository = todoListRepository;
         }
 
         // GET: api/TodoItems
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TodoItem>>> GetTodoItem()
+        public async Task<ActionResult<IEnumerable<TodoItem>>> GetTodoItems()
         {
-            return await _context.TodoItem.ToListAsync();
+            return await todoListRepository.GetTodoItems();
         }
 
         // GET: api/TodoItems/5
         [HttpGet("{id}")]
         public async Task<ActionResult<TodoItem>> GetTodoItem(long id)
         {
-            var todoItem = await _context.TodoItem.FindAsync(id);
+            var todoItem = await todoListRepository.GetTodoItem(id);
 
             if (todoItem == null)
             {
@@ -52,15 +52,13 @@ namespace TodoApi.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(todoItem).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
+                await todoListRepository.UpdateTodoItem(id, todoItem);
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!TodoItemExists(id))
+                if (!todoListRepository.TodoItemExists(id))
                 {
                     return NotFound();
                 }
@@ -78,8 +76,7 @@ namespace TodoApi.Controllers
         [HttpPost]
         public async Task<ActionResult<TodoItem>> PostTodoItem(TodoItem todoItem)
         {
-            _context.TodoItem.Add(todoItem);
-            await _context.SaveChangesAsync();
+            await todoListRepository.CreateTodoItem(todoItem);
 
             return CreatedAtAction("GetTodoItem", new { id = todoItem.Id }, todoItem);
         }
@@ -88,21 +85,15 @@ namespace TodoApi.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTodoItem(long id)
         {
-            var todoItem = await _context.TodoItem.FindAsync(id);
+            var todoItem = await todoListRepository.GetTodoItem(id);
             if (todoItem == null)
             {
                 return NotFound();
             }
 
-            _context.TodoItem.Remove(todoItem);
-            await _context.SaveChangesAsync();
+            todoListRepository.DeleteTodoItem(todoItem);
 
             return NoContent();
-        }
-
-        private bool TodoItemExists(long id)
-        {
-            return _context.TodoItem.Any(e => e.Id == id);
         }
     }
 }

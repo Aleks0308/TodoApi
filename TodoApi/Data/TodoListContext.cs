@@ -14,6 +14,6 @@ namespace TodoApi.Data
         {
         }
 
-        public DbSet<TodoApi.Models.TodoItem> TodoItem { get; set; } = default!;
+        public DbSet<TodoApi.Models.TodoItem> TodoItems { get; set; } = default!;
     }
 }
